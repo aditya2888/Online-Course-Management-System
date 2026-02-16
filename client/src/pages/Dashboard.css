@@ -114,6 +114,12 @@
   color: #495057;
 }
 
+.course-link {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+
 /* Status Badges */
 .status {
   padding: 5px 12px;
@@ -132,10 +138,12 @@
   color: #856404;
 }
 
+.status.completed {
+  background-color: #cce5ff;
+  color: #004085;
+}
 
-/* --- EXISTING CSS ABOVE --- */
-
-/* New: Delete Button */
+/* Delete Button */
 .delete-btn {
   background-color: #ff4d4d;
   color: white;
@@ -144,13 +152,14 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.8rem;
+  transition: background 0.3s;
 }
 
 .delete-btn:hover {
   background-color: #cc0000;
 }
 
-/* New: Modal Overlay (Dark background) */
+/* Modal Overlay (Dark background) */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -164,7 +173,7 @@
   z-index: 1000;
 }
 
-/* New: Modal Box */
+/* Modal Box */
 .modal-content {
   background: white;
   padding: 30px;
@@ -185,10 +194,11 @@
   margin-bottom: 15px;
   border: 1px solid #ddd;
   border-radius: 5px;
+  font-size: 1rem;
 }
 
 /* Modal Buttons */
-.modal-buttons {
+.modal-buttons, .modal-actions {
   display: flex;
   gap: 10px;
   justify-content: center;
@@ -203,6 +213,10 @@
   cursor: pointer;
 }
 
+.save-btn:hover {
+  background-color: #218838;
+}
+
 .cancel-btn {
   background-color: #6c757d;
   color: white;
@@ -210,4 +224,8 @@
   padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
+}
+
+.cancel-btn:hover {
+  background-color: #5a6268;
 }
