@@ -2,7 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard'; // <--- Import the new Dashboard!
+import Register from './pages/Register'; // <--- Import Register
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
@@ -12,9 +13,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          
-          {/* NOW we use the real Dashboard component */}
-          <Route path="/dashboard" element={<Dashboard />} /> 
+          <Route path="/register" element={<Register />} /> {/* <--- Add Route */}
+          <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </div>
     </BrowserRouter>

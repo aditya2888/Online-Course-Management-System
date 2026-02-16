@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import "./Login.css"; // <--- Updated to match your folder structure
+import { Link } from "react-router-dom"; 
+import "./Login.css"; 
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -43,7 +44,7 @@ const Login = () => {
         </form>
 
         <p className="register-link">
-            Don't have an account? <span style={{color: "#007bff", cursor: "pointer"}}>Register</span>
+            Don't have an account? <Link to="/register" style={{textDecoration: 'none', fontWeight: 'bold', color: '#007bff'}}>Register</Link>
         </p>
       </div>
     </div>
