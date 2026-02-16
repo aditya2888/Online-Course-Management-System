@@ -8,18 +8,21 @@ const Dashboard = () => {
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [showStudentModal, setShowStudentModal] = useState(false);
 
-  // 1. DATA STATE (NOW EMPTY INITIALLY)
+  // 1. DATA STATE (Starts Empty)
   const [courses, setCourses] = useState([]); 
   const [studentsList, setStudentsList] = useState([]);
 
-  // 2. SETTINGS STATE (NEW)
+  // 2. SEARCH STATE (New!)
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // 3. SETTINGS STATE
   const [settings, setSettings] = useState({
     adminName: "Admin User",
     email: "admin@college.com",
     notifications: true
   });
 
-  // 3. FORM STATE
+  // 4. FORM STATE
   const [newCourse, setNewCourse] = useState({ title: "", students: "", status: "Active" });
   const [newStudent, setNewStudent] = useState({ name: "", email: "", enrolled: "" });
 
@@ -42,7 +45,7 @@ const Dashboard = () => {
     const courseToAdd = {
       id: Date.now(),
       title: newCourse.title,
-      students: newCourse.students, // This is just 'Capacity' or 'Seats'
+      students: newCourse.students,
       status: newCourse.status
     };
     setCourses([...courses, courseToAdd]);
@@ -111,7 +114,6 @@ const Dashboard = () => {
                 <p>{studentsList.length}</p>
               </div>
             </div>
-            {/* Empty State Message if no data */}
             {courses.length === 0 && (
               <div style={{ textAlign: 'center', marginTop: '50px', color: '#666' }}>
                 <p>No courses found. Go to "My Courses" to add one!</p>
@@ -151,30 +153,57 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* VIEW 3: STUDENTS */}
+        {/* VIEW 3: STUDENTS (With Search!) */}
         {activeTab === 'students' && (
           <>
             <header className="dashboard-header">
               <h2>Enrolled Students</h2>
               <button className="add-course-btn" onClick={() => setShowStudentModal(true)}>+ Add New Student</button>
             </header>
+
+            {/* SEARCH BAR */}
+            <div style={{ marginBottom: '20px' }}>
+                <input 
+                    type="text" 
+                    placeholder="Search students by name..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                        padding: '12px',
+                        width: '100%',
+                        maxWidth: '400px',
+                        border: '1px solid #ddd',
+                        borderRadius: '5px',
+                        fontSize: '1rem'
+                    }}
+                />
+            </div>
+
             <section className="course-list">
               <table>
                 <thead>
                   <tr><th>Name</th><th>Email</th><th>Enrolled In</th><th>Action</th></tr>
                 </thead>
                 <tbody>
-                  {studentsList.length > 0 ? (
-                    studentsList.map((student) => (
-                      <tr key={student.id}>
+                  {/* Filter Logic: Show only students matching search */}
+                  {studentsList.filter(student => 
+                        student.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    ).length > 0 ? (
+                    
+                    studentsList
+                        .filter(student => student.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map((student) => (
+                        <tr key={student.id}>
                         <td>{student.name}</td>
                         <td>{student.email}</td>
                         <td>{student.enrolled}</td>
                         <td><button className="delete-btn" onClick={() => handleDeleteStudent(student.id)}>Remove</button></td>
-                      </tr>
+                        </tr>
                     ))
                   ) : (
-                     <tr><td colSpan="4" style={{textAlign:"center"}}>No students enrolled yet.</td></tr>
+                     <tr><td colSpan="4" style={{textAlign:"center"}}>
+                        {searchTerm ? "No students found matching that name." : "No students enrolled yet."}
+                     </td></tr>
                   )}
                 </tbody>
               </table>
@@ -182,46 +211,27 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* VIEW 4: SETTINGS (NEW FUNCTIONALITY) */}
+        {/* VIEW 4: SETTINGS */}
         {activeTab === 'settings' && (
           <>
              <header className="dashboard-header"><h2>Admin Settings</h2></header>
              <div style={{ background: 'white', padding: '30px', borderRadius: '8px', maxWidth: '600px' }}>
                 <form onSubmit={handleSaveSettings}>
-                  
                   <div style={{ marginBottom: '20px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Admin Name</label>
-                    <input 
-                      type="text" 
-                      name="adminName" 
-                      value={settings.adminName} 
-                      onChange={handleSettingsChange}
-                      style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-                    />
+                    <input type="text" name="adminName" value={settings.adminName} onChange={handleSettingsChange}
+                      style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }} />
                   </div>
-
                   <div style={{ marginBottom: '20px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Email Address</label>
-                    <input 
-                      type="email" 
-                      name="email" 
-                      value={settings.email} 
-                      onChange={handleSettingsChange}
-                      style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }}
-                    />
+                    <input type="email" name="email" value={settings.email} onChange={handleSettingsChange}
+                      style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }} />
                   </div>
-
                   <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
-                    <input 
-                      type="checkbox" 
-                      name="notifications" 
-                      checked={settings.notifications} 
-                      onChange={handleSettingsChange}
-                      style={{ marginRight: '10px', width: '20px', height: '20px' }}
-                    />
+                    <input type="checkbox" name="notifications" checked={settings.notifications} onChange={handleSettingsChange}
+                      style={{ marginRight: '10px', width: '20px', height: '20px' }} />
                     <label>Enable Email Notifications</label>
                   </div>
-
                   <button type="submit" className="save-btn">Save Settings</button>
                 </form>
              </div>
