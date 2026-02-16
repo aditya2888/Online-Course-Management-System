@@ -1,12 +1,22 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard'; // <--- Import the new Dashboard!
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<h1>Course Management System</h1>} />
-        <Route path="/dashboard" element={<h1>Admin Dashboard</h1>} />
-      </Routes>
+      <Navbar />
+      <div className="main-content">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          
+          {/* NOW we use the real Dashboard component */}
+          <Route path="/dashboard" element={<Dashboard />} /> 
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 }
