@@ -1,14 +1,44 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom"; 
+import { Link } from "react-router-dom";
 import "./Login.css"; 
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  
+  // New: State to hold error messages
+  const [errors, setErrors] = useState({});
+
+  // New: The Validation Logic
+  const validateForm = () => {
+    let newErrors = {};
+    let isValid = true;
+
+    // Check if email contains '@'
+    if (!email.includes("@")) {
+      newErrors.email = "Please enter a valid email address.";
+      isValid = false;
+    }
+
+    // Check if password is at least 6 characters
+    if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters.";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Login Attempt:", { email, password });
+    
+    // Only proceed if validation passes
+    if (validateForm()) {
+      console.log("Login Success:", { email, password });
+      alert("Login Successful! (This is where we would redirect you)");
+      setErrors({}); // Clear errors
+    }
   };
 
   return (
@@ -25,8 +55,12 @@ const Login = () => {
               placeholder="Enter your email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              // Turn border red if there is an error
+              style={{ borderColor: errors.email ? "red" : "#ddd" }}
               required 
             />
+            {/* Show the error message in red text */}
+            {errors.email && <span style={{color: "red", fontSize: "0.8rem", marginTop: "5px", display: "block"}}>{errors.email}</span>}
           </div>
 
           <div className="form-group">
@@ -36,8 +70,10 @@ const Login = () => {
               placeholder="Enter your password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              style={{ borderColor: errors.password ? "red" : "#ddd" }}
               required 
             />
+            {errors.password && <span style={{color: "red", fontSize: "0.8rem", marginTop: "5px", display: "block"}}>{errors.password}</span>}
           </div>
 
           <button type="submit" className="login-btn">Login</button>

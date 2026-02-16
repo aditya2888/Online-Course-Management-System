@@ -1,5 +1,6 @@
 import React from 'react';
 import "./Dashboard.css"; // We will style this next
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   // Fake data to simulate a database response
@@ -55,7 +56,12 @@ const Dashboard = () => {
             <tbody>
               {courses.map((course) => (
                 <tr key={course.id}>
-                  <td>{course.title}</td>
+                  {/* Make the title clickable */}
+                  <td>
+                    <Link to={`/course/${course.id}`} style={{ textDecoration: 'none', color: '#007bff', fontWeight: 'bold' }}>
+                      {course.title}
+                    </Link>
+                  </td>
                   <td>{course.students}</td>
                   <td>
                     <span className={`status ${course.status.toLowerCase()}`}>
