@@ -4,7 +4,8 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import CourseDetails from './pages/CourseDetails'; // <--- Import the new page
+import CourseDetails from './pages/CourseDetails';
+import ProtectedRoute from './components/ProtectedRoute'; // <--- Import this!
 
 function App() {
   return (
@@ -15,10 +16,26 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
           
-          {/* New Route: :id changes based on which course is clicked */}
-          <Route path="/course/:id" element={<CourseDetails />} /> 
+          {/* PROTECTED ROUTE: User MUST be logged in to see Dashboard */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* PROTECTED ROUTE: User MUST be logged in to see Course Details */}
+          <Route 
+            path="/course/:id" 
+            element={
+              <ProtectedRoute>
+                <CourseDetails />
+              </ProtectedRoute>
+            } 
+          /> 
         </Routes>
       </div>
     </BrowserRouter>

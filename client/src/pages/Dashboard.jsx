@@ -12,14 +12,15 @@ const Dashboard = () => {
   const [courses, setCourses] = useState([]); 
   const [studentsList, setStudentsList] = useState([]);
 
-  // 2. SEARCH STATE (New!)
+  // 2. SEARCH STATE
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 3. SETTINGS STATE
+  // 3. SETTINGS & ROLE STATE (New!)
   const [settings, setSettings] = useState({
     adminName: "Admin User",
     email: "admin@college.com",
-    notifications: true
+    notifications: true,
+    isAdmin: true // <--- NEW: Controls if you are Admin or User
   });
 
   // 4. FORM STATE
@@ -28,7 +29,7 @@ const Dashboard = () => {
 
   // --- ACTIONS ---
 
-  // Delete Handlers
+  // Delete Handlers (Only work if isAdmin is true)
   const handleDeleteCourse = (id) => {
     setCourses(courses.filter((course) => course.id !== id));
   };
@@ -81,18 +82,21 @@ const Dashboard = () => {
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
-    alert(`Settings Saved!\nName: ${settings.adminName}\nEmail: ${settings.email}\nNotifications: ${settings.notifications ? "On" : "Off"}`);
+    alert(`Settings Saved!\nRole: ${settings.isAdmin ? "Admin" : "User"}\nNotifications: ${settings.notifications ? "On" : "Off"}`);
   };
 
   return (
     <div className="dashboard-container">
       {/* --- SIDEBAR --- */}
       <aside className="sidebar">
-        <div className="sidebar-header">Admin Panel</div>
+        <div className="sidebar-header">
+           {settings.isAdmin ? "Admin Panel" : "Student Panel"}
+        </div>
         <ul className="sidebar-menu">
           <li className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</li>
           <li className={activeTab === 'courses' ? 'active' : ''} onClick={() => setActiveTab('courses')}>My Courses</li>
           <li className={activeTab === 'students' ? 'active' : ''} onClick={() => setActiveTab('students')}>Students</li>
+          <li className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>Reports</li>
           <li className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>Settings</li>
         </ul>
       </aside>
@@ -127,7 +131,10 @@ const Dashboard = () => {
           <>
             <header className="dashboard-header">
               <h2>Manage Courses</h2>
-              <button className="add-course-btn" onClick={() => setShowCourseModal(true)}>+ Add New Course</button>
+              {/* Only Admin can see Add Button */}
+              {settings.isAdmin && (
+                  <button className="add-course-btn" onClick={() => setShowCourseModal(true)}>+ Add New Course</button>
+              )}
             </header>
             <section className="course-list">
               <table>
@@ -141,7 +148,14 @@ const Dashboard = () => {
                         <td><Link to={`/course/${course.id}`} className="course-link">{course.title}</Link></td>
                         <td>{course.students}</td>
                         <td><span className={`status ${course.status.toLowerCase()}`}>{course.status}</span></td>
-                        <td><button className="delete-btn" onClick={() => handleDeleteCourse(course.id)}>Delete</button></td>
+                        <td>
+                            {/* Only Admin can see Delete Button */}
+                            {settings.isAdmin ? (
+                                <button className="delete-btn" onClick={() => handleDeleteCourse(course.id)}>Delete</button>
+                            ) : (
+                                <span style={{color: '#999', fontSize: '0.8rem'}}>View Only</span>
+                            )}
+                        </td>
                       </tr>
                     ))
                   ) : (
@@ -153,29 +167,23 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* VIEW 3: STUDENTS (With Search!) */}
+        {/* VIEW 3: STUDENTS */}
         {activeTab === 'students' && (
           <>
             <header className="dashboard-header">
               <h2>Enrolled Students</h2>
-              <button className="add-course-btn" onClick={() => setShowStudentModal(true)}>+ Add New Student</button>
+              {settings.isAdmin && (
+                  <button className="add-course-btn" onClick={() => setShowStudentModal(true)}>+ Add New Student</button>
+              )}
             </header>
 
-            {/* SEARCH BAR */}
             <div style={{ marginBottom: '20px' }}>
                 <input 
                     type="text" 
-                    placeholder="Search students by name..." 
+                    placeholder="Search students..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{
-                        padding: '12px',
-                        width: '100%',
-                        maxWidth: '400px',
-                        border: '1px solid #ddd',
-                        borderRadius: '5px',
-                        fontSize: '1rem'
-                    }}
+                    style={{ padding: '12px', width: '100%', maxWidth: '400px', border: '1px solid #ddd', borderRadius: '5px' }}
                 />
             </div>
 
@@ -185,25 +193,25 @@ const Dashboard = () => {
                   <tr><th>Name</th><th>Email</th><th>Enrolled In</th><th>Action</th></tr>
                 </thead>
                 <tbody>
-                  {/* Filter Logic: Show only students matching search */}
-                  {studentsList.filter(student => 
-                        student.name.toLowerCase().includes(searchTerm.toLowerCase())
-                    ).length > 0 ? (
-                    
+                  {studentsList.filter(student => student.name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
                     studentsList
                         .filter(student => student.name.toLowerCase().includes(searchTerm.toLowerCase()))
                         .map((student) => (
                         <tr key={student.id}>
-                        <td>{student.name}</td>
-                        <td>{student.email}</td>
-                        <td>{student.enrolled}</td>
-                        <td><button className="delete-btn" onClick={() => handleDeleteStudent(student.id)}>Remove</button></td>
+                            <td>{student.name}</td>
+                            <td>{student.email}</td>
+                            <td>{student.enrolled}</td>
+                            <td>
+                                {settings.isAdmin ? (
+                                    <button className="delete-btn" onClick={() => handleDeleteStudent(student.id)}>Remove</button>
+                                ) : (
+                                    <span style={{color: '#999', fontSize: '0.8rem'}}>View Only</span>
+                                )}
+                            </td>
                         </tr>
                     ))
                   ) : (
-                     <tr><td colSpan="4" style={{textAlign:"center"}}>
-                        {searchTerm ? "No students found matching that name." : "No students enrolled yet."}
-                     </td></tr>
+                     <tr><td colSpan="4" style={{textAlign:"center"}}>No students found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -211,27 +219,63 @@ const Dashboard = () => {
           </>
         )}
 
-        {/* VIEW 4: SETTINGS */}
+        {/* VIEW 4: REPORTS (NEW MODULE) */}
+        {activeTab === 'reports' && (
+          <>
+             <header className="dashboard-header"><h2>System Reports</h2></header>
+             <div className="reports-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                
+                <div className="stat-card" style={{ textAlign: 'left' }}>
+                    <h3>📊 Enrollment Report</h3>
+                    <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '15px' }}>Download a detailed list of all students.</p>
+                    <button className="save-btn" onClick={() => alert("Downloading Enrollment_Report.csv...")}>Download CSV</button>
+                </div>
+
+                <div className="stat-card" style={{ textAlign: 'left' }}>
+                    <h3>📈 Course Analytics</h3>
+                    <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '15px' }}>Top Performing Courses:</p>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', height: '60px', gap: '10px', marginBottom: '10px' }}>
+                        <div style={{ width: '30%', height: '60%', background: '#007bff', borderRadius: '4px' }}></div>
+                        <div style={{ width: '30%', height: '80%', background: '#28a745', borderRadius: '4px' }}></div>
+                        <div style={{ width: '30%', height: '40%', background: '#ffc107', borderRadius: '4px' }}></div>
+                    </div>
+                </div>
+
+                <div className="stat-card" style={{ textAlign: 'left' }}>
+                    <h3>🛡️ Audit Logs</h3>
+                    <ul style={{ listStyle: 'none', padding: 0, fontSize: '0.85rem', color: '#555' }}>
+                        <li style={{ borderBottom: '1px solid #eee', padding: '5px 0' }}>• Admin logged in (Just now)</li>
+                        <li style={{ borderBottom: '1px solid #eee', padding: '5px 0' }}>• System check complete</li>
+                    </ul>
+                </div>
+
+             </div>
+          </>
+        )}
+
+        {/* VIEW 5: SETTINGS (With Role Toggle) */}
         {activeTab === 'settings' && (
           <>
-             <header className="dashboard-header"><h2>Admin Settings</h2></header>
+             <header className="dashboard-header"><h2>System Settings</h2></header>
              <div style={{ background: 'white', padding: '30px', borderRadius: '8px', maxWidth: '600px' }}>
                 <form onSubmit={handleSaveSettings}>
+                  
                   <div style={{ marginBottom: '20px' }}>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Admin Name</label>
                     <input type="text" name="adminName" value={settings.adminName} onChange={handleSettingsChange}
                       style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }} />
                   </div>
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Email Address</label>
-                    <input type="email" name="email" value={settings.email} onChange={handleSettingsChange}
-                      style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }} />
+
+                  {/* ROLE TOGGLE (For Demo) */}
+                  <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '5px', border: '1px solid #e9ecef' }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#dc3545' }}>⚠️ Role Simulation (For Demo)</label>
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <input type="checkbox" name="isAdmin" checked={settings.isAdmin} onChange={handleSettingsChange}
+                        style={{ marginRight: '10px', width: '20px', height: '20px' }} />
+                        <label>Simulate Admin Mode (Uncheck to view as Student)</label>
+                    </div>
                   </div>
-                  <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
-                    <input type="checkbox" name="notifications" checked={settings.notifications} onChange={handleSettingsChange}
-                      style={{ marginRight: '10px', width: '20px', height: '20px' }} />
-                    <label>Enable Email Notifications</label>
-                  </div>
+
                   <button type="submit" className="save-btn">Save Settings</button>
                 </form>
              </div>
@@ -267,7 +311,6 @@ const Dashboard = () => {
               <form onSubmit={handleAddStudent}>
                 <input type="text" placeholder="Student Name" required onChange={(e) => setNewStudent({...newStudent, name: e.target.value})} />
                 <input type="email" placeholder="Student Email" required onChange={(e) => setNewStudent({...newStudent, email: e.target.value})} />
-                
                 <select required onChange={(e) => setNewStudent({...newStudent, enrolled: e.target.value})}>
                   <option value="">Select Course</option>
                   {courses.length > 0 ? (
@@ -278,7 +321,6 @@ const Dashboard = () => {
                     <option disabled>No courses available</option>
                   )}
                 </select>
-
                 <div className="modal-actions">
                   <button type="submit" className="save-btn" disabled={courses.length === 0}>Add Student</button>
                   <button type="button" className="cancel-btn" onClick={() => setShowStudentModal(false)}>Cancel</button>
