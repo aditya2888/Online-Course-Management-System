@@ -5,7 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import CourseDetails from './pages/CourseDetails';
-import ProtectedRoute from './components/ProtectedRoute'; // <--- Import this!
+// Notice I removed the import for ProtectedRoute
 
 function App() {
   return (
@@ -17,25 +17,9 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          {/* PROTECTED ROUTE: User MUST be logged in to see Dashboard */}
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* PROTECTED ROUTE: User MUST be logged in to see Course Details */}
-          <Route 
-            path="/course/:id" 
-            element={
-              <ProtectedRoute>
-                <CourseDetails />
-              </ProtectedRoute>
-            } 
-          /> 
+          {/* UNPROTECTED ROUTES: Open for easy testing */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/course/:id" element={<CourseDetails />} /> 
         </Routes>
       </div>
     </BrowserRouter>
