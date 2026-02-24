@@ -1,33 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import * as courseService from '../services/course.service';
 import "./CourseDetails.css";
 
 const CourseDetails = () => {
-  const { id } = useParams(); // Get the ID from the URL (e.g., 1, 2, or 3)
+  const { id } = useParams();
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fake database of courses
-  const courseData = {
-    1: { title: "Full Stack Web Development", instructor: "Dr. Angela Yu", duration: "12 Weeks", description: "Learn React, Node.js, and MongoDB from scratch. Perfect for beginners." },
-    2: { title: "Python for Data Science", instructor: "Prof. Andrew Ng", duration: "8 Weeks", description: "Master Python libraries like Pandas, NumPy, and Scikit-Learn." },
-    3: { title: "Introduction to DevOps", instructor: "Jane Doe", duration: "6 Weeks", description: "Understand CI/CD pipelines, Docker, Kubernetes, and Cloud Architecture." }
+  useEffect(() => {
+    fetchCourseDetails();
+  }, [id]);
+
+  const fetchCourseDetails = async () => {
+    try {
+      setLoading(true);
+      const data = await courseService.getCourse(id);
+      if (data.success) {
+        setCourse(data.course);
+      }
+    } catch (error) {
+      console.error("Error fetching course details:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Select the course based on the ID, or show a default message if not found
-  const course = courseData[id] || { title: "Course Not Found", instructor: "N/A", description: "This course does not exist." };
+  if (loading) return <div className="details-container"><div className="loader">Loading...</div></div>;
+  if (!course) return <div className="details-container"><div className="error">Course not found</div></div>;
 
   return (
     <div className="details-container">
-      <div className="details-card">
+      <div className="details-card animate-fade-in">
         <Link to="/dashboard" className="back-btn">← Back to Dashboard</Link>
-        
+
         <div className="course-header">
           <h1>{course.title}</h1>
-          <span className="badge">Active</span>
+          <span className="badge">{course.status}</span>
         </div>
 
         <div className="course-info">
-          <p><strong>Instructor:</strong> {course.instructor}</p>
-          <p><strong>Duration:</strong> {course.duration}</p>
+          <p><strong>Instructor:</strong> {course.instructor?.name}</p>
+          <p><strong>Category:</strong> {course.category}</p>
+          <p><strong>Price:</strong> ₹{course.price}</p>
+          <p><strong>Max Capacity:</strong> {course.capacity} students</p>
         </div>
 
         <div className="course-description">
@@ -35,7 +51,9 @@ const CourseDetails = () => {
           <p>{course.description}</p>
         </div>
 
-        <button className="enroll-btn">View Syllabus</button>
+        <div className="course-actions">
+          <button className="enroll-btn-premium">View Syllabus</button>
+        </div>
       </div>
     </div>
   );
