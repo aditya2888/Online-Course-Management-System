@@ -1,284 +1,254 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import "./Dashboard.css"; 
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import * as courseService from '../services/course.service';
+import { getCurrentUser, logout } from '../services/auth.service';
+import "./Dashboard.css";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   // --- STATE MANAGEMENT ---
   const [activeTab, setActiveTab] = useState("overview");
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [showStudentModal, setShowStudentModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // 1. DATA STATE (Starts Empty)
-  const [courses, setCourses] = useState([]); 
+  // 1. DATA STATE
+  const [courses, setCourses] = useState([]);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [studentsList, setStudentsList] = useState([]);
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   // 2. SEARCH STATE
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 3. SETTINGS & ROLE STATE (New!)
+  // 3. SETTINGS & ROLE STATE
+  const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [settings, setSettings] = useState({
-    adminName: "Admin User",
-    email: "admin@college.com",
+    adminName: currentUser?.name || "User",
+    email: currentUser?.email || "",
     notifications: true,
-    isAdmin: true // <--- NEW: Controls if you are Admin or User
+    isAdmin: currentUser?.role === 'admin',
+    isInstructor: currentUser?.role === 'instructor'
   });
 
   // 4. FORM STATE
-  const [newCourse, setNewCourse] = useState({ title: "", students: "", status: "Active" });
+  const [newCourse, setNewCourse] = useState({ title: "", description: "", category: "", price: 0, capacity: 50 });
   const [newStudent, setNewStudent] = useState({ name: "", email: "", enrolled: "" });
+
+  // --- FETCH DATA ---
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    fetchCourses();
+  }, [currentUser]);
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const data = await courseService.getAllCourses();
+      if (data.success) {
+        setCourses(data.courses);
+        // If student, filter enrolled courses
+        if (currentUser?.role === 'student') {
+          setEnrolledCourses(data.courses.filter(c => c.studentsEnrolled?.includes(currentUser.id)));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // --- ACTIONS ---
 
-  // Delete Handlers (Only work if isAdmin is true)
-  const handleDeleteCourse = (id) => {
-    setCourses(courses.filter((course) => course.id !== id));
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
-  const handleDeleteStudent = (id) => {
-    setStudentsList(studentsList.filter((student) => student.id !== id));
+  const handleDeleteCourse = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this course?")) return;
+    try {
+      await courseService.deleteCourse(id);
+      setCourses(courses.filter((course) => course._id !== id));
+    } catch (error) {
+      alert(error.message || "Failed to delete course");
+    }
   };
 
-  // Add Course Handler
-  const handleAddCourse = (e) => {
+  const handleAddCourse = async (e) => {
     e.preventDefault();
-    if (!newCourse.title || !newCourse.students) return alert("Please fill in all fields");
-
-    const courseToAdd = {
-      id: Date.now(),
-      title: newCourse.title,
-      students: newCourse.students,
-      status: newCourse.status
-    };
-    setCourses([...courses, courseToAdd]);
-    setShowCourseModal(false);
-    setNewCourse({ title: "", students: "", status: "Active" });
+    try {
+      const data = await courseService.createCourse(newCourse);
+      if (data.success) {
+        setCourses([...courses, data.course]);
+        setShowCourseModal(false);
+        setNewCourse({ title: "", description: "", category: "", price: 0, capacity: 50 });
+        showToast("Course created successfully!");
+      }
+    } catch (error) {
+      showToast(error.message || "Failed to add course", "error");
+    }
   };
 
-  // Add Student Handler
-  const handleAddStudent = (e) => {
-    e.preventDefault();
-    if (!newStudent.name || !newStudent.email || !newStudent.enrolled) return alert("Please fill in all fields");
-
-    const studentToAdd = {
-      id: Date.now(),
-      name: newStudent.name,
-      email: newStudent.email,
-      enrolled: newStudent.enrolled
-    };
-
-    setStudentsList([...studentsList, studentToAdd]);
-    setShowStudentModal(false);
-    setNewStudent({ name: "", email: "", enrolled: "" });
+  const handleEnroll = async (id) => {
+    try {
+      const data = await courseService.enrollInCourse(id);
+      if (data.success) {
+        setEnrolledCourses([...enrolledCourses, courses.find(c => c._id === id)]);
+        showToast("Successfully enrolled in the course!");
+        // Refresh local course state to show "Enrolled" instead of button
+        setCourses(courses.map(c => c._id === id ? { ...c, studentsEnrolled: [...(c.studentsEnrolled || []), currentUser.id] } : c));
+      }
+    } catch (error) {
+      showToast(error.message || "Failed to enroll", "error");
+    }
   };
 
-  // Settings Handler
-  const handleSettingsChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setSettings({
-      ...settings,
-      [name]: type === 'checkbox' ? checked : value
-    });
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "success" }), 3000);
   };
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
-    alert(`Settings Saved!\nRole: ${settings.isAdmin ? "Admin" : "User"}\nNotifications: ${settings.notifications ? "On" : "Off"}`);
+    alert(`Settings Saved!`);
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container animate-fade-in">
       {/* --- SIDEBAR --- */}
       <aside className="sidebar">
         <div className="sidebar-header">
-           {settings.isAdmin ? "Admin Panel" : "Student Panel"}
+          {settings.isAdmin ? "Admin Panel" : settings.isInstructor ? "Instructor Panel" : "Student Panel"}
         </div>
         <ul className="sidebar-menu">
           <li className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>Overview</li>
-          <li className={activeTab === 'courses' ? 'active' : ''} onClick={() => setActiveTab('courses')}>My Courses</li>
-          <li className={activeTab === 'students' ? 'active' : ''} onClick={() => setActiveTab('students')}>Students</li>
+          <li className={activeTab === 'courses' ? 'active' : ''} onClick={() => setActiveTab('courses')}>All Courses</li>
+          {currentUser?.role === 'student' && (
+            <li className={activeTab === 'enrolled' ? 'active' : ''} onClick={() => setActiveTab('enrolled')}>Enrolled Courses</li>
+          )}
+          {(settings.isAdmin || settings.isInstructor) && (
+            <li className={activeTab === 'students' ? 'active' : ''} onClick={() => setActiveTab('students')}>Students</li>
+          )}
           <li className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>Reports</li>
           <li className={activeTab === 'settings' ? 'active' : ''} onClick={() => setActiveTab('settings')}>Settings</li>
+          <li onClick={handleLogout} style={{ color: '#dc3545', marginTop: '20px', cursor: 'pointer' }}>Logout</li>
         </ul>
       </aside>
 
       {/* --- MAIN CONTENT --- */}
       <main className="dashboard-content">
-        
-        {/* VIEW 1: OVERVIEW */}
-        {activeTab === 'overview' && (
+
+        {loading ? (
+          <div style={{ textAlign: 'center', marginTop: '100px' }}><h3>Loading...</h3></div>
+        ) : (
           <>
-            <header className="dashboard-header"><h2>Dashboard Overview</h2></header>
-            <div className="stats-grid">
-              <div className="stat-card">
-                <h3>Total Courses</h3>
-                <p>{courses.length}</p>
-              </div>
-              <div className="stat-card">
-                <h3>Total Students</h3>
-                <p>{studentsList.length}</p>
-              </div>
-            </div>
-            {courses.length === 0 && (
-              <div style={{ textAlign: 'center', marginTop: '50px', color: '#666' }}>
-                <p>No courses found. Go to "My Courses" to add one!</p>
-              </div>
+            {/* VIEW 1: OVERVIEW */}
+            {activeTab === 'overview' && (
+              <>
+                <header className="dashboard-header"><h2>Dashboard Overview</h2></header>
+                <div className="stats-grid">
+                  <div className="stat-card">
+                    <h3>{currentUser?.role === 'student' ? 'Available Courses' : 'Total Courses'}</h3>
+                    <p>{courses.length}</p>
+                  </div>
+                  {currentUser?.role === 'student' && (
+                    <div className="stat-card">
+                      <h3>Enrolled Courses</h3>
+                      <p>{enrolledCourses.length}</p>
+                    </div>
+                  )}
+                  <div className="stat-card">
+                    <h3>Role</h3>
+                    <p style={{ textTransform: 'capitalize' }}>{currentUser?.role}</p>
+                  </div>
+                </div>
+                {courses.length === 0 && (
+                  <div style={{ textAlign: 'center', marginTop: '50px', color: '#666' }}>
+                    <p>No courses found.</p>
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
 
-        {/* VIEW 2: MY COURSES */}
-        {activeTab === 'courses' && (
-          <>
-            <header className="dashboard-header">
-              <h2>Manage Courses</h2>
-              {/* Only Admin can see Add Button */}
-              {settings.isAdmin && (
-                  <button className="add-course-btn" onClick={() => setShowCourseModal(true)}>+ Add New Course</button>
-              )}
-            </header>
-            <section className="course-list">
-              <table>
-                <thead>
-                  <tr><th>Course Title</th><th>Capacity</th><th>Status</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                  {courses.length > 0 ? (
-                    courses.map((course) => (
-                      <tr key={course.id}>
-                        <td><Link to={`/course/${course.id}`} className="course-link">{course.title}</Link></td>
-                        <td>{course.students}</td>
-                        <td><span className={`status ${course.status.toLowerCase()}`}>{course.status}</span></td>
-                        <td>
-                            {/* Only Admin can see Delete Button */}
-                            {settings.isAdmin ? (
-                                <button className="delete-btn" onClick={() => handleDeleteCourse(course.id)}>Delete</button>
-                            ) : (
-                                <span style={{color: '#999', fontSize: '0.8rem'}}>View Only</span>
-                            )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr><td colSpan="4" style={{textAlign:"center"}}>No courses added yet.</td></tr>
+            {/* VIEW 2: COURSES */}
+            {activeTab === 'courses' && (
+              <>
+                <header className="dashboard-header">
+                  <h2>Available Courses</h2>
+                  {(settings.isAdmin || settings.isInstructor) && (
+                    <button className="add-course-btn" onClick={() => setShowCourseModal(true)}>+ Add New Course</button>
                   )}
-                </tbody>
-              </table>
-            </section>
-          </>
-        )}
-
-        {/* VIEW 3: STUDENTS */}
-        {activeTab === 'students' && (
-          <>
-            <header className="dashboard-header">
-              <h2>Enrolled Students</h2>
-              {settings.isAdmin && (
-                  <button className="add-course-btn" onClick={() => setShowStudentModal(true)}>+ Add New Student</button>
-              )}
-            </header>
-
-            <div style={{ marginBottom: '20px' }}>
-                <input 
-                    type="text" 
-                    placeholder="Search students..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{ padding: '12px', width: '100%', maxWidth: '400px', border: '1px solid #ddd', borderRadius: '5px' }}
-                />
-            </div>
-
-            <section className="course-list">
-              <table>
-                <thead>
-                  <tr><th>Name</th><th>Email</th><th>Enrolled In</th><th>Action</th></tr>
-                </thead>
-                <tbody>
-                  {studentsList.filter(student => student.name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-                    studentsList
-                        .filter(student => student.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                        .map((student) => (
-                        <tr key={student.id}>
-                            <td>{student.name}</td>
-                            <td>{student.email}</td>
-                            <td>{student.enrolled}</td>
-                            <td>
-                                {settings.isAdmin ? (
-                                    <button className="delete-btn" onClick={() => handleDeleteStudent(student.id)}>Remove</button>
+                </header>
+                <section className="course-list">
+                  <table>
+                    <thead>
+                      <tr><th>Course Title</th><th>Instructor</th><th>Price</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                      {courses.length > 0 ? (
+                        courses.map((course) => {
+                          const isEnrolled = course.studentsEnrolled?.includes(currentUser?.id);
+                          return (
+                            <tr key={course._id}>
+                              <td><Link to={`/course/${course._id}`} className="course-link">{course.title}</Link></td>
+                              <td>{course.instructor?.name || 'N/A'}</td>
+                              <td>₹{course.price}</td>
+                              <td>
+                                {(settings.isAdmin || (settings.isInstructor && course.instructor?._id === currentUser?.id)) ? (
+                                  <button className="delete-btn" onClick={() => handleDeleteCourse(course._id)}>Delete</button>
                                 ) : (
-                                    <span style={{color: '#999', fontSize: '0.8rem'}}>View Only</span>
+                                  <button
+                                    className={isEnrolled ? "enrolled-btn" : "save-btn"}
+                                    onClick={() => !isEnrolled && handleEnroll(course._id)}
+                                    disabled={isEnrolled}
+                                  >
+                                    {isEnrolled ? "✓ Enrolled" : "Enroll Now"}
+                                  </button>
                                 )}
-                            </td>
-                        </tr>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr><td colSpan="4" style={{ textAlign: "center" }}>No courses added yet.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </section>
+              </>
+            )}
+
+            {/* VIEW 3: ENROLLED COURSES */}
+            {activeTab === 'enrolled' && (
+              <>
+                <header className="dashboard-header"><h2>My Enrolled Courses</h2></header>
+                <div className="courses-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                  {enrolledCourses.length > 0 ? (
+                    enrolledCourses.map((course) => (
+                      <div key={course._id} className="course-card-premium hover-lift" style={{ padding: '20px', background: 'white', borderRadius: '12px', boxShadow: 'var(--shadow-md)' }}>
+                        <div className="course-badge">{course.category}</div>
+                        <h3 style={{ marginTop: '30px' }}>{course.title}</h3>
+                        <p style={{ color: '#666', fontSize: '0.9rem', margin: '10px 0' }}>{course.description.substring(0, 80)}...</p>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
+                          <span style={{ fontWeight: 'bold' }}>Instructor: {course.instructor?.name}</span>
+                          <Link to={`/course/${course._id}`} className="view-btn" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Go to Course</Link>
+                        </div>
+                      </div>
                     ))
                   ) : (
-                     <tr><td colSpan="4" style={{textAlign:"center"}}>No students found.</td></tr>
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '100px 0' }}>
+                      <p>You haven't enrolled in any courses yet.</p>
+                      <button onClick={() => setActiveTab('courses')} className="save-btn" style={{ marginTop: '20px' }}>Explore Courses</button>
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </section>
-          </>
-        )}
-
-        {/* VIEW 4: REPORTS (NEW MODULE) */}
-        {activeTab === 'reports' && (
-          <>
-             <header className="dashboard-header"><h2>System Reports</h2></header>
-             <div className="reports-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                
-                <div className="stat-card" style={{ textAlign: 'left' }}>
-                    <h3>📊 Enrollment Report</h3>
-                    <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '15px' }}>Download a detailed list of all students.</p>
-                    <button className="save-btn" onClick={() => alert("Downloading Enrollment_Report.csv...")}>Download CSV</button>
                 </div>
-
-                <div className="stat-card" style={{ textAlign: 'left' }}>
-                    <h3>📈 Course Analytics</h3>
-                    <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '15px' }}>Top Performing Courses:</p>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', height: '60px', gap: '10px', marginBottom: '10px' }}>
-                        <div style={{ width: '30%', height: '60%', background: '#007bff', borderRadius: '4px' }}></div>
-                        <div style={{ width: '30%', height: '80%', background: '#28a745', borderRadius: '4px' }}></div>
-                        <div style={{ width: '30%', height: '40%', background: '#ffc107', borderRadius: '4px' }}></div>
-                    </div>
-                </div>
-
-                <div className="stat-card" style={{ textAlign: 'left' }}>
-                    <h3>🛡️ Audit Logs</h3>
-                    <ul style={{ listStyle: 'none', padding: 0, fontSize: '0.85rem', color: '#555' }}>
-                        <li style={{ borderBottom: '1px solid #eee', padding: '5px 0' }}>• Admin logged in (Just now)</li>
-                        <li style={{ borderBottom: '1px solid #eee', padding: '5px 0' }}>• System check complete</li>
-                    </ul>
-                </div>
-
-             </div>
-          </>
-        )}
-
-        {/* VIEW 5: SETTINGS (With Role Toggle) */}
-        {activeTab === 'settings' && (
-          <>
-             <header className="dashboard-header"><h2>System Settings</h2></header>
-             <div style={{ background: 'white', padding: '30px', borderRadius: '8px', maxWidth: '600px' }}>
-                <form onSubmit={handleSaveSettings}>
-                  
-                  <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Admin Name</label>
-                    <input type="text" name="adminName" value={settings.adminName} onChange={handleSettingsChange}
-                      style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '5px' }} />
-                  </div>
-
-                  {/* ROLE TOGGLE (For Demo) */}
-                  <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '5px', border: '1px solid #e9ecef' }}>
-                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#dc3545' }}>⚠️ Role Simulation (For Demo)</label>
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <input type="checkbox" name="isAdmin" checked={settings.isAdmin} onChange={handleSettingsChange}
-                        style={{ marginRight: '10px', width: '20px', height: '20px' }} />
-                        <label>Simulate Admin Mode (Uncheck to view as Student)</label>
-                    </div>
-                  </div>
-
-                  <button type="submit" className="save-btn">Save Settings</button>
-                </form>
-             </div>
+              </>
+            )}
           </>
         )}
 
@@ -288,12 +258,11 @@ const Dashboard = () => {
             <div className="modal-content">
               <h3>Add New Course</h3>
               <form onSubmit={handleAddCourse}>
-                <input type="text" placeholder="Course Title" required onChange={(e) => setNewCourse({...newCourse, title: e.target.value})} />
-                <input type="number" placeholder="Max Capacity" required onChange={(e) => setNewCourse({...newCourse, students: e.target.value})} />
-                <select onChange={(e) => setNewCourse({...newCourse, status: e.target.value})}>
-                  <option value="Active">Active</option>
-                  <option value="Upcoming">Upcoming</option>
-                </select>
+                <input type="text" placeholder="Course Title" required onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })} />
+                <textarea placeholder="Description" required onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', border: '1px solid #ddd', borderRadius: '4px' }}></textarea>
+                <input type="text" placeholder="Category" required onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })} />
+                <input type="number" placeholder="Price" required onChange={(e) => setNewCourse({ ...newCourse, price: Number(e.target.value) })} />
+                <input type="number" placeholder="Max Capacity" required onChange={(e) => setNewCourse({ ...newCourse, capacity: Number(e.target.value) })} />
                 <div className="modal-actions">
                   <button type="submit" className="save-btn">Save Course</button>
                   <button type="button" className="cancel-btn" onClick={() => setShowCourseModal(false)}>Cancel</button>
@@ -303,30 +272,10 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* --- MODAL 2: ADD STUDENT --- */}
-        {showStudentModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <h3>Register New Student</h3>
-              <form onSubmit={handleAddStudent}>
-                <input type="text" placeholder="Student Name" required onChange={(e) => setNewStudent({...newStudent, name: e.target.value})} />
-                <input type="email" placeholder="Student Email" required onChange={(e) => setNewStudent({...newStudent, email: e.target.value})} />
-                <select required onChange={(e) => setNewStudent({...newStudent, enrolled: e.target.value})}>
-                  <option value="">Select Course</option>
-                  {courses.length > 0 ? (
-                    courses.map(course => (
-                      <option key={course.id} value={course.title}>{course.title}</option>
-                    ))
-                  ) : (
-                    <option disabled>No courses available</option>
-                  )}
-                </select>
-                <div className="modal-actions">
-                  <button type="submit" className="save-btn" disabled={courses.length === 0}>Add Student</button>
-                  <button type="button" className="cancel-btn" onClick={() => setShowStudentModal(false)}>Cancel</button>
-                </div>
-              </form>
-            </div>
+        {/* --- TOAST NOTIFICATION --- */}
+        {toast.show && (
+          <div className={`toast-notification ${toast.type}`}>
+            {toast.message}
           </div>
         )}
 

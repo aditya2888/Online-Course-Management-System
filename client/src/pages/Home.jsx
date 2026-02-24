@@ -1,78 +1,39 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import "./Home.css";
+import './Home.css';
 
 const Home = () => {
   return (
-    <div className="home-container">
-      
-      {/* HERO SECTION */}
-      <section className="hero">
-        <div className="hero-content">
-          <h1>Streamline Your College <br /> <span className="highlight">Course Management</span></h1>
-          <p>
-            The ultimate admin tool for managing courses, tracking student enrollments, 
-            and organizing academic data in one secure dashboard.
-          </p>
-          <div className="hero-buttons">
-            <Link to="/register" className="btn btn-primary">Get Started</Link>
-            <Link to="/login" className="btn btn-secondary">Admin Login</Link>
-          </div>
-        </div>
-        <div className="hero-image">
-           {/* You can replace this with a screenshot of your actual dashboard later */}
-           <div className="placeholder-dashboard">
-              <div className="screen-header"></div>
-              <div className="screen-body">
-                <div className="bar"></div>
-                <div className="bar short"></div>
-                <div className="grid">
-                  <div className="box"></div>
-                  <div className="box"></div>
-                  <div className="box"></div>
-                </div>
-              </div>
-           </div>
+    <div className="home-container animate-fade-in">
+      <section className="hero-section">
+        <h1 className="hero-title">Elevate Your <span>Knowledge</span></h1>
+        <p className="hero-subtitle">
+          Join thousands of learners and instructors in the most advanced
+          Online Course Management System.
+        </p>
+        <div className="hero-actions">
+          <Link to="/register" className="btn btn-primary shadow-lg">Get Started</Link>
+          <Link to="/login" className="btn btn-outline">Sign In</Link>
         </div>
       </section>
 
-      {/* FEATURES SECTION */}
-      <section className="features">
-        <h2>Why Use This System?</h2>
-        <div className="feature-grid">
-          
-          <div className="feature-card">
-            <div className="icon">📚</div>
-            <h3>Course Management</h3>
-            <p>Easily create, update, and delete courses. Set status to Active or Upcoming with a single click.</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="icon">👨‍🎓</div>
-            <h3>Student Tracking</h3>
-            <p>Register new students, assign them to courses, and manage their enrollment data efficiently.</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="icon">🔍</div>
-            <h3>Instant Search</h3>
-            <p>Find any student or course in seconds with our real-time search and filter functionality.</p>
-          </div>
-
-          <div className="feature-card">
-            <div className="icon">⚙️</div>
-            <h3>Admin Control</h3>
-            <p>Full administrative control over platform settings, user data, and system configurations.</p>
-          </div>
-
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="footer">
-        <p>&copy; 2026 Online Course Management System. All rights reserved.</p>
-      </footer>
-
+      <div className="features-grid">
+        <Link to="/category/learn-anywhere" className="feature-card hover-lift">
+          <div className="feature-icon">🎓</div>
+          <h3>Learn Anywhere</h3>
+          <p>Experience true flexibility with our mobile-first platform. Access lectures, assignments, and study materials on the go from any device.</p>
+        </Link>
+        <Link to="/category/expert-guidance" className="feature-card hover-lift">
+          <div className="feature-icon">👨‍🏫</div>
+          <h3>Expert Guidance</h3>
+          <p>Gain insights from world-class instructors with years of industry experience. Get personalized feedback and mentorship to master any topic.</p>
+        </Link>
+        <Link to="/category/career-growth" className="feature-card hover-lift">
+          <div className="feature-icon">🚀</div>
+          <h3>Career Growth</h3>
+          <p>Unlock new opportunities with industry-recognized certifications. Join a community of achievers and accelerate your professional journey.</p>
+        </Link>
+      </div>
     </div>
   );
 };

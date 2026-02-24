@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import "./Login.css"; 
+import { Link, useNavigate } from "react-router-dom";
+import { login } from "../services/auth.service";
+import "./Login.css";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  
+  const navigate = useNavigate();
+
   // New: State to hold error messages
   const [errors, setErrors] = useState({});
 
@@ -30,14 +32,20 @@ const Login = () => {
     return isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Only proceed if validation passes
     if (validateForm()) {
-      console.log("Login Success:", { email, password });
-      alert("Login Successful! (This is where we would redirect you)");
-      setErrors({}); // Clear errors
+      try {
+        const result = await login(email, password);
+        if (result.success) {
+          alert("Login Successful!");
+          navigate("/dashboard");
+        }
+      } catch (error) {
+        setErrors({ general: error.message || "Login failed" });
+      }
     }
   };
 
@@ -46,41 +54,41 @@ const Login = () => {
       <div className="login-card">
         <h2>Welcome Back</h2>
         <p>Please login to your account</p>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email Address</label>
-            <input 
-              type="email" 
-              placeholder="Enter your email" 
+            <input
+              type="email"
+              placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               // Turn border red if there is an error
               style={{ borderColor: errors.email ? "red" : "#ddd" }}
-              required 
+              required
             />
             {/* Show the error message in red text */}
-            {errors.email && <span style={{color: "red", fontSize: "0.8rem", marginTop: "5px", display: "block"}}>{errors.email}</span>}
+            {errors.email && <span style={{ color: "red", fontSize: "0.8rem", marginTop: "5px", display: "block" }}>{errors.email}</span>}
           </div>
 
           <div className="form-group">
             <label>Password</label>
-            <input 
-              type="password" 
-              placeholder="Enter your password" 
+            <input
+              type="password"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               style={{ borderColor: errors.password ? "red" : "#ddd" }}
-              required 
+              required
             />
-            {errors.password && <span style={{color: "red", fontSize: "0.8rem", marginTop: "5px", display: "block"}}>{errors.password}</span>}
+            {errors.password && <span style={{ color: "red", fontSize: "0.8rem", marginTop: "5px", display: "block" }}>{errors.password}</span>}
           </div>
 
           <button type="submit" className="login-btn">Login</button>
         </form>
 
         <p className="register-link">
-            Don't have an account? <Link to="/register" style={{textDecoration: 'none', fontWeight: 'bold', color: '#007bff'}}>Register</Link>
+          Don't have an account? <Link to="/register" style={{ textDecoration: 'none', fontWeight: 'bold', color: '#007bff' }}>Register</Link>
         </p>
       </div>
     </div>

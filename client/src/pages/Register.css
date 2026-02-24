@@ -1,91 +1,60 @@
-/* Center everything */
 .register-container {
+  min-height: 90vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 90vh; /* Slightly taller for more fields */
-  background-color: #f0f2f5;
-  padding: 20px;
+  justify-content: center;
+  background: radial-gradient(circle at bottom left, #fdf4ff 0%, #f1f5f9 100%);
+  padding: 40px 20px;
 }
 
-/* The White Card */
 .register-card {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  padding: 50px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
   width: 100%;
-  max-width: 450px; /* Slightly wider than login */
+  max-width: 500px;
   text-align: center;
 }
 
 .register-card h2 {
-  color: #1a1a1a;
-  margin-bottom: 0.5rem;
-  font-size: 1.8rem;
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
 }
 
 .register-card p {
-  color: #666;
-  margin-bottom: 2rem;
+  color: var(--text-muted);
+  margin-bottom: 40px;
 }
 
-/* Inputs */
-.form-group {
-  margin-bottom: 1.2rem;
-  text-align: left;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.4rem;
-  color: #333;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.form-group input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #007bff;
-}
-
-/* Button */
 .register-btn {
   width: 100%;
-  padding: 12px;
-  background-color: #28a745; /* Green for Sign Up to distinguish from Login */
+  padding: 16px;
+  background: var(--secondary-gradient);
   color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: var(--radius-full);
   font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 10px;
+  font-size: 1.1rem;
+  margin-top: 20px;
+  box-shadow: 0 10px 15px -3px rgba(45, 212, 191, 0.4);
 }
 
 .register-btn:hover {
-  background-color: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(45, 212, 191, 0.4);
 }
 
-/* Link at bottom */
 .login-link {
-    margin-top: 15px;
-    font-size: 0.9rem;
-    color: #666;
+  margin-top: 30px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
 }
 
 .login-link a {
-    color: #007bff;
-    text-decoration: none;
-    font-weight: 600;
+  color: #2dd4bf;
+  font-weight: 700;
 }
